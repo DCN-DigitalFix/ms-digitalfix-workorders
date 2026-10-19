@@ -1,13 +1,33 @@
+# Perfil de produccion: PostgreSQL.
+#
+# Se activa con --spring.profiles.active=prod o con la variable de entorno
+# SPRING_PROFILES_ACTIVE=prod. El perfil dev sigue usando H2 en memoria, que
+# es comodo para desarrollar pero pierde los datos en cada reinicio.
+#
+# Ningun valor sensible esta escrito aqui: todos vienen del entorno. Asi el
+# archivo puede versionarse sin exponer la contrasena de la base.
 spring:
   datasource:
-    url: jdbc:oracle:thin:@//${ORACLE_HOST:localhost}:${ORACLE_PORT:1521}/${ORACLE_SERVICE:ORCL}
-    username: ${ORACLE_USER:}
-    password: ${ORACLE_PASSWORD:}
-    driver-class-name: oracle.jdbc.OracleDriver
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:digitalfix}
+    username: ${DB_USER:digitalfix}
+    password: ${DB_PASSWORD:digitalfix}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      # El pool por defecto de Hikari son 10 conexiones. Para un microservicio
+      # en una instancia chica es mas de lo necesario y consume memoria del
+      # lado del servidor de base de datos, que tambien es chico.
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 10000
+ 
   jpa:
     hibernate:
+      # update crea y ajusta las tablas al arrancar. Para este trabajo es lo
+      # practico; en un sistema real el esquema lo manejaria una herramienta
+      # de migraciones como Flyway y esto seria validate.
       ddl-auto: update
     show-sql: false
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.OracleDialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+ 
