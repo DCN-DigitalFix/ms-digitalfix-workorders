@@ -24,7 +24,7 @@ import cl.duoc.ms_digitalfix_workorders.service.WorkOrderService;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/api/workorders")
+@RequestMapping("/api/v1/workorders")
 public class WorkOrderController {
 
     private final WorkOrderService service;
