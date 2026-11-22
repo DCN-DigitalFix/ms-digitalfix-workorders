@@ -22,6 +22,7 @@ import cl.duoc.ms_digitalfix_workorders.dto.CambiarEstadoRequest;
 import cl.duoc.ms_digitalfix_workorders.dto.EstadoOT;
 import cl.duoc.ms_digitalfix_workorders.dto.WorkOrder;
 import cl.duoc.ms_digitalfix_workorders.entity.WorkOrderEntity;
+import cl.duoc.ms_digitalfix_workorders.exception.EstadoInvalidoException;
 import cl.duoc.ms_digitalfix_workorders.exception.StockInsuficienteException;
 import cl.duoc.ms_digitalfix_workorders.repository.WorkOrderRepository;
 
@@ -109,5 +110,29 @@ class WorkOrderServiceTest {
         verifyNoInteractions(catalogClient);
         assertThat(resultado.estado()).isEqualTo(EstadoOT.ASIGNADA);
         assertThat(resultado.codigoRepuesto()).isNull();
+    }
+    
+    @Test
+    void asignarConCodigoSinCantidadFallaYNoConsultaCatalog() {
+        WorkOrderEntity orden = ordenIngresada();
+        when(repository.findById("OT-0001")).thenReturn(Optional.of(orden));
+
+        // @Positive deja pasar los null, asi que esta peticion atraviesa la
+        // validacion y llega hasta el servicio: la guarda tiene que estar
+        // aqui y no en el DTO.
+        CambiarEstadoRequest request = new CambiarEstadoRequest(
+                EstadoOT.ASIGNADA, "Cuadrilla Norte", "AUT-16A", null);
+
+        assertThatThrownBy(() -> service.cambiarEstado("OT-0001", request))
+                .isInstanceOf(EstadoInvalidoException.class)
+                .hasMessageContaining("AUT-16A");
+
+        // Lo que de verdad verifica esta prueba: que el rechazo no deje
+        // rastro. Si la guarda se moviera despues del descontarStock, el 400
+        // seguiria apareciendo y el stock ya estaria descontado.
+        verifyNoInteractions(catalogClient);
+        assertThat(orden.getEstado()).isEqualTo(EstadoOT.INGRESADA);
+        verify(repository, never()).save(any());
+        verifyNoInteractions(publisher, kafkaPublisher);
     }
 }
