@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import cl.duoc.ms_digitalfix_workorders.dto.CambiarEstadoRequest;
@@ -32,10 +33,16 @@ public class WorkOrderService {
 
     private final WorkOrderRepository repository;
     private final WorkOrderEventPublisher publisher;
+    private final WorkOrderKafkaPublisher kafkaPublisher;
 
-    public WorkOrderService(WorkOrderRepository repository, WorkOrderEventPublisher publisher) {
+    @Autowired
+    public WorkOrderService(
+            WorkOrderRepository repository,
+            WorkOrderEventPublisher publisher,
+            WorkOrderKafkaPublisher kafkaPublisher) {
         this.repository = repository;
         this.publisher = publisher;
+        this.kafkaPublisher = kafkaPublisher;
     }
 
     @PostConstruct
@@ -90,9 +97,11 @@ public class WorkOrderService {
 
         repository.save(entity);
 
-        // Ya esta guardada: recien ahora tiene sentido avisar. El publisher
-        // registra sus propios fallos, asi que un broker caido no rompe esto.
+        // Ya esta guardada: recien ahora tiene sentido avisar. Cada publisher
+        // registra sus propios fallos, asi que un broker caido (RabbitMQ o
+        // Kafka) no rompe esto.
         publisher.publicarCreada(entity);
+        kafkaPublisher.publicarCreada(entity);
 
         return toDto(entity);
     }
@@ -101,9 +110,13 @@ public class WorkOrderService {
         WorkOrderEntity actual = repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("No existe la orden de trabajo " + id));
 
-        if (!TRANSICIONES.getOrDefault(actual.getEstado(), Set.of()).contains(request.estado())) {
+        // Se captura antes de mutar la entidad: Kafka necesita el estado
+        // anterior en el evento y despues de setEstado() ya no esta disponible.
+        EstadoOT estadoAnterior = actual.getEstado();
+
+        if (!TRANSICIONES.getOrDefault(estadoAnterior, Set.of()).contains(request.estado())) {
             throw new EstadoInvalidoException(
-                    "Transicion invalida de " + actual.getEstado() + " a " + request.estado());
+                    "Transicion invalida de " + estadoAnterior + " a " + request.estado());
         }
 
         actual.setEstado(request.estado());
@@ -129,7 +142,11 @@ public class WorkOrderService {
         } else if (nuevoEstado == EstadoOT.ANULADA) {
             publisher.publicarAnulada(actual);
         }
-        // INGRESADA y EN_EJECUCION no emiten eventos propios.
+        // INGRESADA y EN_EJECUCION no emiten eventos propios hacia RabbitMQ.
+
+        // Kafka si registra cada transicion, sin excepcion: es el historial
+        // completo que consume audit y la foto de estado que arma report.
+        kafkaPublisher.publicarCambioEstado(actual, estadoAnterior.name());
 
         return toDto(actual);
     }
