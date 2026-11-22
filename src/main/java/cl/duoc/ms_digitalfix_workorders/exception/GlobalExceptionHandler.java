@@ -30,6 +30,28 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(body);
     }
 
+    @ExceptionHandler(StockInsuficienteException.class)
+    public ResponseEntity<ApiError> handleStockInsuficiente(
+            StockInsuficienteException ex, WebRequest request) {
+        ApiError body = ApiError.of(
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                ex.getMessage(),
+                path(request));
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
+    }
+
+    @ExceptionHandler(CatalogNoDisponibleException.class)
+    public ResponseEntity<ApiError> handleCatalogNoDisponible(
+            CatalogNoDisponibleException ex, WebRequest request) {
+        ApiError body = ApiError.of(
+                HttpStatus.SERVICE_UNAVAILABLE.value(),
+                "Service Unavailable",
+                ex.getMessage(),
+                path(request));
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(body);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiError> handleValidation(
             MethodArgumentNotValidException ex, WebRequest request) {

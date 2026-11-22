@@ -11,5 +11,7 @@ public record WorkOrder(
         String tecnicoAsignado,
         String creadaPor,
         LocalDateTime creadaEn,
-        LocalDateTime actualizadaEn) {
+        LocalDateTime actualizadaEn,
+        String codigoRepuesto,
+        Integer cantidadRepuesto) {
 }

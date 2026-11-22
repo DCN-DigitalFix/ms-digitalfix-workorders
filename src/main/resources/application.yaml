@@ -38,6 +38,13 @@ digitalfix:
     allowed-origins:
       - http://localhost:8080
   # ---------------------------------------------------------------------------
+  # Catalog: se consulta de forma sincrona al asignar una orden con repuesto,
+  # para descontar stock antes de confirmar la asignacion. En local apunta a
+  # localhost; en AWS se sobreescribe con la IP privada de la instancia.
+  # ---------------------------------------------------------------------------
+  catalog:
+    base-url: ${CATALOG_URL:http://localhost:8082}
+  # ---------------------------------------------------------------------------
   # Destinos de publicacion.
   #
   # Este microservicio solo produce, asi que no declara colas: le basta saber

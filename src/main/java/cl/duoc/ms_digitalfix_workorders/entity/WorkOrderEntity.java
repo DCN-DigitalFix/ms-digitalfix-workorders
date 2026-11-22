@@ -43,6 +43,14 @@ public class WorkOrderEntity {
     @Column(name = "actualizada_en", nullable = false)
     private LocalDateTime actualizadaEn;
 
+    // Nulos para ordenes que no consumen repuesto (p. ej. una visita de
+    // diagnostico). Se completan al asignar, si la peticion trae un repuesto.
+    @Column(name = "codigo_repuesto", length = 40)
+    private String codigoRepuesto;
+
+    @Column(name = "cantidad_repuesto")
+    private Integer cantidadRepuesto;
+
     public WorkOrderEntity() {
     }
 
@@ -78,4 +86,8 @@ public class WorkOrderEntity {
     public void setCreadaEn(LocalDateTime creadaEn) { this.creadaEn = creadaEn; }
     public LocalDateTime getActualizadaEn() { return actualizadaEn; }
     public void setActualizadaEn(LocalDateTime actualizadaEn) { this.actualizadaEn = actualizadaEn; }
+    public String getCodigoRepuesto() { return codigoRepuesto; }
+    public void setCodigoRepuesto(String codigoRepuesto) { this.codigoRepuesto = codigoRepuesto; }
+    public Integer getCantidadRepuesto() { return cantidadRepuesto; }
+    public void setCantidadRepuesto(Integer cantidadRepuesto) { this.cantidadRepuesto = cantidadRepuesto; }
 }

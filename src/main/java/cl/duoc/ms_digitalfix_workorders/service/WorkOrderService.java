@@ -34,15 +34,18 @@ public class WorkOrderService {
     private final WorkOrderRepository repository;
     private final WorkOrderEventPublisher publisher;
     private final WorkOrderKafkaPublisher kafkaPublisher;
+    private final CatalogClient catalogClient;
 
     @Autowired
     public WorkOrderService(
             WorkOrderRepository repository,
             WorkOrderEventPublisher publisher,
-            WorkOrderKafkaPublisher kafkaPublisher) {
+            WorkOrderKafkaPublisher kafkaPublisher,
+            CatalogClient catalogClient) {
         this.repository = repository;
         this.publisher = publisher;
         this.kafkaPublisher = kafkaPublisher;
+        this.catalogClient = catalogClient;
     }
 
     @PostConstruct
@@ -119,6 +122,20 @@ public class WorkOrderService {
                     "Transicion invalida de " + estadoAnterior + " a " + request.estado());
         }
 
+        // Descontar antes de guardar: entre las dos escrituras (catalog y
+        // esta base) no hay transaccion que las abarque. Si el orden fuera
+        // al reves y fallara catalog despues de guardar, la orden quedaria
+        // asignada con el stock intacto y nadie se enteraria. Asi, si algo
+        // falla, es el guardado local (mucho menos probable que una llamada
+        // de red) y el stock queda descontado sin orden: un desajuste de
+        // inventario detectable, no una asignacion fantasma. Resolverlo del
+        // todo pide una Saga, que excede el alcance de este caso.
+        if (request.estado() == EstadoOT.ASIGNADA && request.codigoRepuesto() != null) {
+            catalogClient.descontarStock(request.codigoRepuesto(), request.cantidadRepuesto());
+            actual.setCodigoRepuesto(request.codigoRepuesto());
+            actual.setCantidadRepuesto(request.cantidadRepuesto());
+        }
+
         actual.setEstado(request.estado());
         if (request.tecnicoAsignado() != null) {
             actual.setTecnicoAsignado(request.tecnicoAsignado());
@@ -173,6 +190,8 @@ public class WorkOrderService {
                 e.getTecnicoAsignado(),
                 e.getCreadaPor(),
                 e.getCreadaEn(),
-                e.getActualizadaEn());
+                e.getActualizadaEn(),
+                e.getCodigoRepuesto(),
+                e.getCantidadRepuesto());
     }
 }
