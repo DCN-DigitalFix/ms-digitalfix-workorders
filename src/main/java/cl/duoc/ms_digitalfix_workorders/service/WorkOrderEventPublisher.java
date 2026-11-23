@@ -32,14 +32,11 @@ public class WorkOrderEventPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(WorkOrderEventPublisher.class);
 
-    private final RabbitTemplate rabbitTemplate;
-    private final MensajeriaProperties props;
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
 
     @Autowired
-    public WorkOrderEventPublisher(RabbitTemplate rabbitTemplate, MensajeriaProperties props) {
-        this.rabbitTemplate = rabbitTemplate;
-        this.props = props;
-    }
+    private MensajeriaProperties props;
 
     /** Orden recien creada: se confirma su recepcion al cliente. */
     public void publicarCreada(WorkOrderEntity orden) {

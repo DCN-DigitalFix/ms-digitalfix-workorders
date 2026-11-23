@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import cl.duoc.ms_digitalfix_workorders.config.KafkaEventosProperties;
 import cl.duoc.ms_digitalfix_workorders.dto.EstadoOT;
@@ -50,7 +51,7 @@ class WorkOrderKafkaPublisherTest {
         when(kafkaTemplate.send(eq("digitalfix.workorders.events"), eq("OT-0001"), any()))
                 .thenReturn(futuro);
 
-        WorkOrderKafkaPublisher publisher = new WorkOrderKafkaPublisher(kafkaTemplate, props);
+        WorkOrderKafkaPublisher publisher = crearPublisher(props);
         publisher.publicarCreada(orden);
 
         ArgumentCaptor<WorkOrderEvent> captor = ArgumentCaptor.forClass(WorkOrderEvent.class);
@@ -70,7 +71,7 @@ class WorkOrderKafkaPublisherTest {
                 .thenReturn(futuro);
 
         orden.setEstado(EstadoOT.ASIGNADA);
-        WorkOrderKafkaPublisher publisher = new WorkOrderKafkaPublisher(kafkaTemplate, props);
+        WorkOrderKafkaPublisher publisher = crearPublisher(props);
         publisher.publicarCambioEstado(orden, "INGRESADA");
 
         ArgumentCaptor<WorkOrderEvent> captor = ArgumentCaptor.forClass(WorkOrderEvent.class);
@@ -90,7 +91,7 @@ class WorkOrderKafkaPublisherTest {
         when(kafkaTemplate.send(eq("digitalfix.workorders.events"), eq("OT-0001"), any()))
                 .thenReturn(futuroFallido);
 
-        WorkOrderKafkaPublisher publisher = new WorkOrderKafkaPublisher(kafkaTemplate, props);
+        WorkOrderKafkaPublisher publisher = crearPublisher(props);
 
         assertThatCode(() -> publisher.publicarCreada(orden)).doesNotThrowAnyException();
     }
@@ -99,11 +100,19 @@ class WorkOrderKafkaPublisherTest {
     void conKafkaDeshabilitadoNoLlamaAlTemplate() {
         KafkaEventosProperties desactivado =
                 new KafkaEventosProperties(false, new KafkaEventosProperties.Topics("digitalfix.workorders.events"));
-        WorkOrderKafkaPublisher publisher = new WorkOrderKafkaPublisher(kafkaTemplate, desactivado);
+        WorkOrderKafkaPublisher publisher = crearPublisher(desactivado);
 
         publisher.publicarCreada(orden);
 
         verifyNoInteractions(kafkaTemplate);
+    }
+
+    /** WorkOrderKafkaPublisher se inyecta por campo: no tiene constructor que invocar. */
+    private WorkOrderKafkaPublisher crearPublisher(KafkaEventosProperties props) {
+        WorkOrderKafkaPublisher publisher = new WorkOrderKafkaPublisher();
+        ReflectionTestUtils.setField(publisher, "kafkaTemplate", kafkaTemplate);
+        ReflectionTestUtils.setField(publisher, "props", props);
+        return publisher;
     }
 
     private CompletableFuture<SendResult<String, WorkOrderEvent>> futuroExitoso() {

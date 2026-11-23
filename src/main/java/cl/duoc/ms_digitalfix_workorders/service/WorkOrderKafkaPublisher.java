@@ -31,15 +31,11 @@ public class WorkOrderKafkaPublisher {
 
     private static final Logger log = LoggerFactory.getLogger(WorkOrderKafkaPublisher.class);
 
-    private final KafkaTemplate<String, WorkOrderEvent> kafkaTemplate;
-    private final KafkaEventosProperties props;
+    @Autowired
+    private KafkaTemplate<String, WorkOrderEvent> kafkaTemplate;
 
     @Autowired
-    public WorkOrderKafkaPublisher(
-            KafkaTemplate<String, WorkOrderEvent> kafkaTemplate, KafkaEventosProperties props) {
-        this.kafkaTemplate = kafkaTemplate;
-        this.props = props;
-    }
+    private KafkaEventosProperties props;
 
     public void publicarCreada(WorkOrderEntity orden) {
         publicar(WorkOrderEvent.ORDEN_CREADA, orden, null);

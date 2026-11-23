@@ -17,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import cl.duoc.ms_digitalfix_workorders.dto.CambiarEstadoRequest;
 import cl.duoc.ms_digitalfix_workorders.dto.EstadoOT;
@@ -48,8 +49,14 @@ class WorkOrderServiceTest {
     void setUp() {
         // No puede ser un inicializador de campo: los @Mock se inyectan
         // despues de que corren los inicializadores, asi que todo quedaria
-        // construido con mocks null.
-        service = new WorkOrderService(repository, publisher, kafkaPublisher, catalogClient);
+        // construido con mocks null. WorkOrderService se inyecta por campo,
+        // asi que tampoco hay constructor que invocar: se arma con
+        // ReflectionTestUtils.
+        service = new WorkOrderService();
+        ReflectionTestUtils.setField(service, "repository", repository);
+        ReflectionTestUtils.setField(service, "publisher", publisher);
+        ReflectionTestUtils.setField(service, "kafkaPublisher", kafkaPublisher);
+        ReflectionTestUtils.setField(service, "catalogClient", catalogClient);
     }
 
     private WorkOrderEntity ordenIngresada() {

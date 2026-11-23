@@ -38,12 +38,8 @@ public class RabbitProducerConfig {
 
     private static final Logger log = LoggerFactory.getLogger(RabbitProducerConfig.class);
 
-    private final MensajeriaProperties props;
-
     @Autowired
-    public RabbitProducerConfig(MensajeriaProperties props) {
-        this.props = props;
-    }
+    private MensajeriaProperties props;
 
     /** Comandos con destinatario unico y conocido. */
     @Bean

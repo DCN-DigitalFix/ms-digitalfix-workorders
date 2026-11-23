@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
@@ -31,8 +32,12 @@ class CatalogClientTest {
     @Mock
     private RestTemplate restTemplate;
 
+    /** CatalogClient se inyecta por campo: no tiene constructor que invocar. */
     private CatalogClient client() {
-        return new CatalogClient(restTemplate, BASE_URL);
+        CatalogClient catalogClient = new CatalogClient();
+        ReflectionTestUtils.setField(catalogClient, "restTemplate", restTemplate);
+        ReflectionTestUtils.setField(catalogClient, "baseUrl", BASE_URL);
+        return catalogClient;
     }
 
     @Test

@@ -31,22 +31,17 @@ public class WorkOrderService {
             EstadoOT.CERRADA, Set.of(),
             EstadoOT.ANULADA, Set.of());
 
-    private final WorkOrderRepository repository;
-    private final WorkOrderEventPublisher publisher;
-    private final WorkOrderKafkaPublisher kafkaPublisher;
-    private final CatalogClient catalogClient;
+    @Autowired
+    private WorkOrderRepository repository;
 
     @Autowired
-    public WorkOrderService(
-            WorkOrderRepository repository,
-            WorkOrderEventPublisher publisher,
-            WorkOrderKafkaPublisher kafkaPublisher,
-            CatalogClient catalogClient) {
-        this.repository = repository;
-        this.publisher = publisher;
-        this.kafkaPublisher = kafkaPublisher;
-        this.catalogClient = catalogClient;
-    }
+    private WorkOrderEventPublisher publisher;
+
+    @Autowired
+    private WorkOrderKafkaPublisher kafkaPublisher;
+
+    @Autowired
+    private CatalogClient catalogClient;
 
     @PostConstruct
     void seed() {

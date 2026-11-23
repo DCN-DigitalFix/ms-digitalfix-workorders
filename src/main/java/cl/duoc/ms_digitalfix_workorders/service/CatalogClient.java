@@ -26,15 +26,11 @@ public class CatalogClient {
 
     private static final Pattern CAMPO_MESSAGE = Pattern.compile("\"message\"\\s*:\\s*\"([^\"]*)\"");
 
-    private final RestTemplate restTemplate;
-    private final String baseUrl;
-
     @Autowired
-    public CatalogClient(RestTemplate restTemplate,
-                          @Value("${digitalfix.catalog.base-url}") String baseUrl) {
-        this.restTemplate = restTemplate;
-        this.baseUrl = baseUrl;
-    }
+    private RestTemplate restTemplate;
+
+    @Value("${digitalfix.catalog.base-url}")
+    private String baseUrl;
 
     public void descontarStock(String codigo, int cantidad) {
         String url = baseUrl + "/api/v1/catalog/repuestos/" + codigo + "/descontar";

@@ -28,12 +28,8 @@ import jakarta.validation.Valid;
 @RequestMapping("/api/v1/workorders")
 public class WorkOrderController {
 
-    private final WorkOrderService service;
-
     @Autowired
-    public WorkOrderController(WorkOrderService service) {
-        this.service = service;
-    }
+    private WorkOrderService service;
 
     @GetMapping
     @PreAuthorize("hasAnyRole('Admin', 'Supervisor', 'Cliente', 'Auditor') and hasAuthority('SCOPE_OT.Read')")
