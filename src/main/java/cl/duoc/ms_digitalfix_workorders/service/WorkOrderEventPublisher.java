@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.AmqpException;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import cl.duoc.ms_digitalfix_workorders.config.MensajeriaProperties;
@@ -34,6 +35,7 @@ public class WorkOrderEventPublisher {
     private final RabbitTemplate rabbitTemplate;
     private final MensajeriaProperties props;
 
+    @Autowired
     public WorkOrderEventPublisher(RabbitTemplate rabbitTemplate, MensajeriaProperties props) {
         this.rabbitTemplate = rabbitTemplate;
         this.props = props;

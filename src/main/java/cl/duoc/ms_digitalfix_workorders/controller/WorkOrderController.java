@@ -2,6 +2,7 @@ package cl.duoc.ms_digitalfix_workorders.controller;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -29,6 +30,7 @@ public class WorkOrderController {
 
     private final WorkOrderService service;
 
+    @Autowired
     public WorkOrderController(WorkOrderService service) {
         this.service = service;
     }
