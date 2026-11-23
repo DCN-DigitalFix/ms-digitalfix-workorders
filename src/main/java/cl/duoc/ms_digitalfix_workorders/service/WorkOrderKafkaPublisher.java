@@ -24,7 +24,8 @@ import cl.duoc.ms_digitalfix_workorders.messaging.kafka.WorkOrderEvent;
  * Mismo principio que WorkOrderEventPublisher (RabbitMQ): la mensajeria es
  * secundaria respecto del CRUD. La orden ya quedo guardada cuando se llama a
  * este publisher, asi que un Kafka caido no le quita al usuario su 201; el
- * fallo solo se registra en el log via whenComplete, nunca se relanza.
+ * fallo solo se registra en el log, nunca se relanza: los asincronos via
+ * whenComplete y los sincronos de send() via try/catch.
  */
 @Service
 public class WorkOrderKafkaPublisher {
@@ -66,16 +67,24 @@ public class WorkOrderKafkaPublisher {
 
         // Clave = ordenId: todos los eventos de una orden caen en la misma
         // particion y audit/report los leen en el orden en que ocurrieron.
-        kafkaTemplate.send(props.topics().workordersEvents(), orden.getId(), evento)
-                .whenComplete((resultado, error) -> {
-                    if (error != null) {
-                        log.error("No se pudo publicar {} para la orden {}: {}",
-                                eventType, orden.getId(), error.getMessage());
-                    } else {
-                        log.info("Publicado {} para la orden {} en la particion {}",
-                                eventType, orden.getId(), resultado.getRecordMetadata().partition());
-                    }
-                });
+        // send() puede fallar de forma sincrona (metadatos del topico, id de
+        // productor idempotente) antes de devolver el futuro; whenComplete no
+        // lo ve. Se captura aqui para que un Kafka caido nunca rompa el HTTP.
+        try {
+            kafkaTemplate.send(props.topics().workordersEvents(), orden.getId(), evento)
+                    .whenComplete((resultado, error) -> {
+                        if (error != null) {
+                            log.error("No se pudo publicar {} para la orden {}: {}",
+                                    eventType, orden.getId(), error.getMessage());
+                        } else {
+                            log.info("Publicado {} para la orden {} en la particion {}",
+                                    eventType, orden.getId(), resultado.getRecordMetadata().partition());
+                        }
+                    });
+        } catch (RuntimeException e) {
+            log.error("No se pudo publicar {} para la orden {}: {}",
+                    eventType, orden.getId(), e.getMessage());
+        }
     }
 
     /** El actor viaja en el evento para que audit lo conserve; "sistema" cubre llamadas sin JWT (seed, tests). */
