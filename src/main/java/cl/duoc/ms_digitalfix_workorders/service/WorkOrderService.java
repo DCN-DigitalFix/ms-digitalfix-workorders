@@ -126,6 +126,15 @@ public class WorkOrderService {
         // inventario detectable, no una asignacion fantasma. Resolverlo del
         // todo pide una Saga, que excede el alcance de este caso.
         if (request.estado() == EstadoOT.ASIGNADA && request.codigoRepuesto() != null) {
+
+            // @Positive acepta los null (solo rechaza ceros y negativos), asi
+            // que la cantidad puede llegar vacia. Sin esta guarda, el Integer
+            // nulo se desempaqueta contra el int de descontarStock y explota
+            // con NullPointerException, que sale como 500.
+            if (request.cantidadRepuesto() == null) {
+                throw new EstadoInvalidoException("Se indico el repuesto " + request.codigoRepuesto() + " sin cantidad: cantidadRepuesto es obligatoria al asignar con repuesto");
+            }
+
             catalogClient.descontarStock(request.codigoRepuesto(), request.cantidadRepuesto());
             actual.setCodigoRepuesto(request.codigoRepuesto());
             actual.setCantidadRepuesto(request.cantidadRepuesto());
